@@ -474,7 +474,10 @@ def aproxcond(df,a,b,state,eq,cycle="Full",norm=False): # //Infra
         #Si hay F-N estas ec aproximan el valor de W [eV] con la pendiente, es decir la altura de la barrera (sin lowerear) medida desde la interfase
         df2["1/V"]=abs(1/df2["Ewe"])
         df2["J/V^2"]=np.log(abs(df2["J"])/df2["Ewe"]**2)
-        try:
+        x,y="1/V","J/V^2"
+        xl,yl=r"$1/V$ [1/V]", r"$\log(|J/V^2|)$ [log(mA/(cm²·V²))]"
+        """
+        try: Esto es una mierda no hace falta tanta cosa que hay muchos parametros no se necesitan mas 
             Wi=(df2.groupby("nº ciclo", group_keys=False)).apply(lambda dtemp: np.polyfit(dtemp["1/V"],dtemp["J/V^2"],1,cov=False), include_groups=False)# funcion de trabajo de la barrera o altura de la barrera en eV 
             W=Wi.mean()[0] #Solo queremos la pendiente promedio, la ordenada en el origen no sirve 
             if W<=0:
@@ -496,6 +499,7 @@ def aproxcond(df,a,b,state,eq,cycle="Full",norm=False): # //Infra
             print("Error: Barrier height don´t follow Fowler-Nordheim equation")
             x,y=0,0
             xl,yl="",""
+        """
     else:
         xl,yl="",""
         pass
@@ -1024,7 +1028,6 @@ def multilinreg(df,a,b,state,eqs,cycle="Full"):
 
 #----------------------------------------Analisis de los datos------------------------------------------------------------------------------------- 
 #-----------------------------------------------------------------------------------------------------------------------
-#df1=leer_enJ("TFM/Solo 1 poroso/Set canónico/C-SPEIS_J80_T1s_SPEIS_01.mpt","SPEIS",desde=1,hasta=4) #del set canónico 
 
 
 df1=leer_enJ("TFM/Solo 1 poroso/Un poroso para gobernalos a todos/MP_J60_T120s_01.mpt","CV")
@@ -1033,10 +1036,13 @@ df1s,info,df1e=labelmem(df1,evolplot=False)
 #JV(df1,"Representación J-V",log=False)
 #df1["R"]=df1["Ewe"]/(df1["I"]/1000)  
 
-ajuste=linreg(df1,1,3,0,papermode=True) 
+#ajuste=linreg(df1,0.1,2,0,papermode=False,eql=["Ohm"]) 
+#plt.show()
+
+#ajuste=linreg(df1,1,3,1,papermode=True) 
 #ajuste=linreg(df1,3,4.9,1,papermode=True) 
 #ajuste=linreg(df1,-7,-1,0,papermode=True)
-
+plt.show()
 """
 #ajuste2=multilinreg(df1,3,4.8,0,["Poole-F","Schottky"])
 df1["R"]=df1["Ewe"]/(df1["I"]/1000)
@@ -1048,7 +1054,7 @@ print(maxDM)
 plt.plot(maxDM.index,maxDM["Dm"])
 plt.show()
 """
-plt.show()
+
 ####################################################################################################################################################
 """
 spice = pd.read_csv("TFM/Solo 1 poroso/Un poroso para gobernalos a todos/memristor poroso mejor ajuste de I al DC sweep de medida.txt", sep="\t")
@@ -1092,7 +1098,7 @@ axins.scatter(spice["Ewe"][creciente], (spice["V(n003)"]*1000)[creciente], s=0.5
 axins.scatter(spice["Ewe"][decreciente], (spice["V(n003)"]*1000)[decreciente], s=0.5, color="tab:orange", edgecolors="none", zorder=4)
 axins.set_title(r"V vs x", fontsize=9)
 axins.set_xlabel("V [V]", fontsize=8)
-axins.set_ylabel(r"x", fontsize=8)
+axins.set_ylabel(r"x [u.a.]", fontsize=8)
 axins.grid(True, alpha=0.5)
 axins.tick_params(labelsize=8)
 axins.set_facecolor('none') # Fondo transparente para que se vea el blanco del recuadro
@@ -1257,10 +1263,9 @@ labels2 = [item for sublist in zip(labels_3, labels_4) for item in sublist]
 ax3.legend(lines2, labels2, loc="upper center", bbox_to_anchor=(0.45, 1.0), ncol=2, columnspacing=4.0, markerscale=1)
 
 plt.title("J y R2 vs V")
-ax3.set_xlabel("Ewe [V]")
+ax3.set_xlabel("V [V]")
 ax3.set_ylabel("J [mA/cm²]")
 ax4.set_ylabel("R2 [$\Omega$]")
-ax3.set_xlim(-5, 5)
 
 # Ampliar el límite superior de ambos ejes un 30% para que la leyenda no pise los datos
 ymin3, ymax3 = ax3.get_ylim()
@@ -1268,13 +1273,24 @@ ax3.set_ylim(ymin3, ymax3 + (ymax3 - ymin3) * 0.3)
 ymin4, ymax4 = ax4.get_ylim()
 ax4.set_ylim(ymin4, ymax4 + (ymax4 - ymin4) * 0.3)
 
+import matplotlib.ticker as ticker
+def sci_fmt(x, pos):
+    if x == 0:
+        return "$0$"
+    exponent = int(np.floor(np.log10(abs(x))))
+    coeff = x / 10**exponent
+    if coeff == 1.0:
+        return f"$10^{{{exponent}}}$"
+    return f"${coeff:.1f} \\times 10^{{{exponent}}}$"
+ax4.yaxis.set_major_formatter(ticker.FuncFormatter(sci_fmt))
+
 ax3.grid()
 plt.show()
 """
 #-----------------------------------------------------------------------------------------------------------------------
 """
-# Gráfica de Nyquist (SPEIS)
-df_speis = leer_enJ("TFM/Solo 1 poroso/Un poroso para gobernalos a todos/SPEIS 1mes despues/J45_t120_SPEIS_01.mpt", "SPEIS", desde=2)
+# Gráfica de Nyquist (SPEIS) con inset caracoles
+df_speis = leer_enJ("TFM/Solo 1 poroso/Un poroso para gobernalos a todos/SPEIS 1mes despues/J45_t120_SPEIS_01.mpt", "SPEIS", desde=1,hasta=1)
 
 try:
     fig_nyq, (ax_nyq, ax_zoom) = plt.subplots(1, 2, figsize=(10, 5), gridspec_kw={'wspace': 0.40})
@@ -1285,21 +1301,21 @@ try:
 
     # Se grafica Z_re vs Z_-im (Nyquist standard) iterando por ciclos para "levantar el lápiz"
     num_ciclos = len(ciclos.unique())
-    colores = plt.cm.viridis(np.linspace(0.85, 0, num_ciclos)) # 0.9 para evitar el amarillo muy claro sobre el fondo blanco
+    colores = plt.cm.viridis(np.linspace(0,0.85, num_ciclos)) # 0.9 para evitar el amarillo muy claro sobre el fondo blanco
     
     for i, c in enumerate(ciclos.unique()):
         segmento = df_speis[ciclos == c]
         
         if i == 0:
-            lbl = "5V"
-        elif i == num_ciclos - 1 and num_ciclos > 1:
             lbl = "0V"
+        elif i == num_ciclos - 1 and num_ciclos > 1:
+            lbl = "5V"
         else:
             lbl = None
             
         ax_nyq.plot(segmento["Z_re"], segmento["Z_-im"], linewidth=1.5, marker='o', markersize=3, color=colores[i], zorder=1, label=lbl)
         
-    ax_nyq.set_title(r"Representación de Nyquist de 5V $\rightarrow$ 0V", fontsize=16)
+    ax_nyq.set_title(r"Representación de Nyquist de 0V $\rightarrow$ 5V", fontsize=16)
     ax_nyq.set_xlabel("Re(Z) [$\Omega$]", fontsize=14)
     ax_nyq.set_ylabel("-Im(Z) [$\Omega$]", fontsize=14)
 
@@ -1313,13 +1329,13 @@ try:
     ax_nyq.yaxis.get_offset_text().set_fontsize(12)
     
     ax_nyq.set_aspect('equal', adjustable='datalim') # Misma escala en X e Y para Nyquist
-    ax_nyq.set_xlim(-0.5e5, 4e5) # Ajustado el espacio negativo y positivo del eje X
+  
 
     # --- COORDENADAS A DEFINIR POR EL USUARIO ---
-    center_x = 49500  # <--- PONER AQUI COORDENADA X
-    center_y = 4100  # <--- PONER AQUI COORDENADA Y
-    span_x = 5200   # <--- RANGO EN X DEL INSET
-    span_y = 5000   # <--- RANGO EN Y DEL INSET
+    center_x = 0.20e5  # <--- PONER AQUI COORDENADA X
+    center_y = 0.3e4  # <--- PONER AQUI COORDENADA Y
+    span_x = 0.2e5   # <--- RANGO EN X DEL INSET
+    span_y = 0.8e4   # <--- RANGO EN Y DEL INSET
 
     for i, c in enumerate(ciclos.unique()):
         segmento = df_speis[ciclos == c]
@@ -1327,7 +1343,7 @@ try:
     
     ax_zoom.set_xlim(center_x - (span_x/2), center_x + (span_x/2))
     ax_zoom.set_ylim(center_y - (span_y/2), center_y + (span_y/2))
-    ax_zoom.set_title("Región de 1-20 Khz a 4V", fontsize=16)
+    ax_zoom.set_title("Región de 1-20 Khz entorno de 4V", fontsize=16)
     ax_zoom.set_xlabel("Re(Z) [$\Omega$]", fontsize=14)
     ax_zoom.set_ylabel("-Im(Z) [$\Omega$]", fontsize=14)
     ax_zoom.ticklabel_format(axis='both', style='sci', scilimits=(0,0), useMathText=True)
@@ -1348,6 +1364,7 @@ try:
     plt.show()
 except NameError:
     print("\033[1;33mInfo: Para plotear Nyquist, asegúrate de tener una variable 'df_speis' con tus datos.\033[0m")
+
 """
 #-----------------------------------------------------------------------------------------------------------------------
 
