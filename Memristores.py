@@ -472,7 +472,7 @@ def aproxcond(df,a,b,state,eq,cycle="Full",norm=False): # //Infra
     
     elif eq=="F-N":#Fowler-Nordheim también conocido como emisión de campo, emisión de cátodo frío o tunel Nordheim-Fowler, si E<10^8 V/m es despreciable (para estos datos E~10^4 V/m) 
         #Si hay F-N estas ec aproximan el valor de W [eV] con la pendiente, es decir la altura de la barrera (sin lowerear) medida desde la interfase
-        df2["1/V"]=abs(1/df2["Ewe"])
+        df2["1/V"]=1/df2["Ewe"] #sin abs porque si no en negativo todo es positivo y la pendiente no cuadra
         df2["J/V^2"]=np.log(abs(df2["J"])/df2["Ewe"]**2)
         x,y="1/V","J/V^2"
         xl,yl=r"$1/V$ [1/V]", r"$\log(|J/V^2|)$ [log(mA/(cm²·V²))]"
@@ -1041,7 +1041,7 @@ df1s,info,df1e=labelmem(df1,evolplot=False)
 
 #ajuste=linreg(df1,1,3,1,papermode=True) 
 #ajuste=linreg(df1,3,4.9,1,papermode=True) 
-#ajuste=linreg(df1,-7,-1,0,papermode=True)
+ajuste=linreg(df1,-7,-1,1,papermode=True)
 plt.show()
 """
 #ajuste2=multilinreg(df1,3,4.8,0,["Poole-F","Schottky"])
@@ -1228,8 +1228,8 @@ macro_dV.loc[idx_max:idx_min] = -1
 # Creciente = alejarse de 0 (V y dV tienen el mismo signo)
 creciente_full = (df_extra["V"] * macro_dV) >= 0
 
-# Dividir el potencial entre dos para que el rango de 10 sea de 5
-df_extra["V"] = df_extra["V"] / 2
+
+df_extra["V"] = df_extra["V"]
 creciente_extra = creciente_full.copy()
 decreciente_extra = ~creciente_extra
 
